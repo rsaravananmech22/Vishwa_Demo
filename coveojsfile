@@ -26098,6 +26098,63 @@ var EmailUtils = /** @class */ (function () {
         }
         return [name, email];
     };
+    EmailUtils.createAttachment = function (filename, content, contentType, encoding) {
+        if (encoding === void 0) { encoding = 'base64'; }
+        if (!filename || !content) {
+            throw new Error('Filename and content are required for attachment creation');
+        }
+        return {
+            filename: filename,
+            content: content,
+            contentType: contentType || 'application/octet-stream',
+            encoding: encoding
+        };
+    };
+    EmailUtils.sendEmailToRecipients = function (recipients, subject, body, options) {
+        if (options === void 0) { options = {}; }
+        if (!recipients || recipients.length === 0) {
+            throw new Error('Recipients are required');
+        }
+        if (!subject) {
+            throw new Error('Subject is required');
+        }
+        if (!body) {
+            throw new Error('Body is required');
+        }
+        var emailData = {
+            to: Array.isArray(recipients) ? recipients.join(';') : recipients,
+            subject: subject,
+            body: body,
+            attachments: []
+        };
+        // Handle existing attachment parameter for backward compatibility
+        if (options.attachment) {
+            emailData.attachments.push(options.attachment);
+        }
+        // Handle generic attachments array
+        if (options.attachments && Array.isArray(options.attachments)) {
+            emailData.attachments = emailData.attachments.concat(options.attachments);
+        }
+        // Handle single attachment files
+        if (options.files && Array.isArray(options.files)) {
+            options.files.forEach(function (file) {
+                var attachment = EmailUtils.createAttachment(
+                    file.name || 'attachment',
+                    file.content,
+                    file.type,
+                    file.encoding
+                );
+                emailData.attachments.push(attachment);
+            });
+        }
+        // Validate all attachments
+        emailData.attachments.forEach(function (attachment, index) {
+            if (!attachment.filename || !attachment.content) {
+                throw new Error('Invalid attachment at index ' + index + ': filename and content are required');
+            }
+        });
+        return emailData;
+    };
     return EmailUtils;
 }());
 exports.EmailUtils = EmailUtils;
